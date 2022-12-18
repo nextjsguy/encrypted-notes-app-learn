@@ -1,6 +1,7 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 
+// https://www.youtube.com/watch?v=z7z0PiiaBgw
 function App() {
   const editor = useEditor({
     extensions: [StarterKit],
