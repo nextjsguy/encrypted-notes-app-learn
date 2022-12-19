@@ -1,45 +1,89 @@
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
+import { JSONContent } from "@tiptap/react";
+import { useState } from "react";
+import NoteEditor from "./components/NoteEditor";
+import { NoteProps } from "./types";
 
 // https://www.youtube.com/watch?v=z7z0PiiaBgw
+
 function App() {
-  const editor = useEditor({
-    extensions: [StarterKit],
-    content: "<p>Hello World!</p>",
-    editorProps: {
-      attributes: {
-        class: "outline-none flex flex-col flex-1",
+  const [notes, setNotes] = useState<Record<string, NoteProps>>({});
+  const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
+
+  const activeNote = activeNoteId ? notes[activeNoteId] : null;
+
+  const handleCreateNewNote = () => {
+    const newNote = {
+      id: crypto.randomUUID(),
+      title: `New note title`,
+      content: "",
+      updatedAt: new Date(),
+    };
+
+    setNotes((notes) => ({ ...notes, [newNote.id]: newNote }));
+
+    setActiveNoteId(newNote.id);
+  };
+
+  const notesList = Object.values(notes).sort(
+    (a, b) => b.updatedAt.getDate() - a.updatedAt.getTime()
+  );
+
+  const handleChangeActiveNote = (id: string) => {
+    setActiveNoteId(id);
+  };
+
+  const handleChangeNoteContent = (id: string, content: JSONContent) => {
+    setNotes((notes) => ({
+      ...notes,
+      [id]: {
+        ...notes[id],
+        updatedAt: new Date(),
+        content
       },
-    },
-  });
+    }));
+  };
 
   return (
     <div className="min-h-screen overflow-hidden flex">
       <div className="min-h-screen w-[15rem] flex flex-col  border-r border-gray-300 overflow-auto">
-        Sidebar
+        <button
+          className="m-6 p-2 bg-white rounded shadow-md	
+          border border-gray-200 font-semibold text-gray-600 cursor-pointer hover:border-gray-400"
+          onClick={handleCreateNewNote}
+        >
+          New Note
+        </button>
+        {/* Sidebar List */}
+        <div className="flex flex-col overflow-auto gap-1 py-2">
+          {notesList.map((note: NoteProps) => (
+            <div
+              key={note.id}
+              role="button"
+              tabIndex={0}
+              className={`p-2 mx-6 cursor-pointer rounded 
+               ${
+                 activeNoteId === note.id
+                   ? "bg-slate-500 "
+                   : "hover:bg-gray-100"
+               }`}
+              onClick={() => handleChangeActiveNote(note.id)}
+            >
+              {note.title}
+            </div>
+          ))}
+        </div>
       </div>
       {/* Editor container */}
-      <div className="min-h-screen flex flex-col flex-1">
-        {/* Toolbar */}
-        <div className="flex items-center border-b-2 p-6 gap-1">
-          <button
-            onClick={() => editor?.chain().focus().toggleBold().run()}
-            className={editor?.isActive("bold") ? "is-active bg-gray-200 px-2" : "px-2"}
-          >
-            Bold
-          </button>
-          <button
-            onClick={() => editor?.chain().focus().toggleItalic().run()}
-            className={editor?.isActive("italic") ? "is-active bg-gray-200 px-2" : "px-2"}
-          >
-            Italic
-          </button>
-        </div>
-        <EditorContent
-          className="overflow-auto flex flex-1 flex-col px-6"
-          editor={editor}
+      {activeNote ? (
+        <NoteEditor
+          note={activeNote}
+          onChange={(content) =>
+            handleChangeNoteContent(activeNote.id, content)
+          }
         />
-      </div>
+      ) : (
+        <div>Create A New Note or select one</div>
+      )}
     </div>
   );
 }
